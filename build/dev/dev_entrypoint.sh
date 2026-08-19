@@ -1,6 +1,6 @@
 #!/bin/bash
 
-cd /sources/GeoNature/backend && uv pip install --system -r requirements-dev.txt
+cd /sources/GeoNature && uv pip install --system -r backend/requirements-dev.txt
 
 echo "Modules to install: $(ls -d /sources/gn_*/ | sort)"
 for module in $(ls -d /sources/gn_*/ | sort); do
