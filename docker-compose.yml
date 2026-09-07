@@ -1,4 +1,0 @@
-include:
-  - path:
-      - docker-compose.essential.yml
-      - docker-compose.traefik.yml
