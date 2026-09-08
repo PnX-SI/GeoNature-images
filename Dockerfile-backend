@@ -1,4 +1,5 @@
 ARG GEONATURE_BACKEND_IMAGE="ghcr.io/pnx-si/geonature-backend:latest"
+ARG GEONATURE_BACKEND_DEV_IMAGE=${GEONATURE_BACKEND_IMAGE}-dev
 
 FROM python:3.11-bookworm AS build
 
@@ -9,20 +10,20 @@ RUN --mount=type=cache,target=/root/.cache \
 
 FROM build AS build-export
 WORKDIR /build/
-COPY ./sources/gn_module_export .
+COPY ./gn_module_export .
 RUN python setup.py bdist_wheel
 
 FROM build AS build-dashboard
 WORKDIR /build/
-COPY ./sources/gn_module_dashboard .
+COPY ./gn_module_dashboard .
 RUN python setup.py bdist_wheel
 
 FROM build AS build-monitoring
 WORKDIR /build/
-COPY ./sources/gn_module_monitoring .
+COPY ./gn_module_monitoring .
 RUN python setup.py bdist_wheel
 
-FROM ${GEONATURE_BACKEND_IMAGE}-wheels AS base_env
+FROM ${GEONATURE_BACKEND_IMAGE} AS base_env
 WORKDIR /dist/geonature
 RUN --mount=type=cache,target=/var/cache/apt \
     --mount=type=cache,target=/var/lib/apt \
@@ -31,8 +32,20 @@ COPY --from=build-export /build/dist/*.whl .
 COPY --from=build-dashboard /build/dist/*.whl .
 COPY --from=build-monitoring /build/dist/*.whl .
 
-
-FROM base_env AS prod-extra
+FROM base_env AS prod
 RUN --mount=type=cache,target=/root/.cache \
     pip install *.whl sentry_sdk[flask]
 RUN rm -f *.whl
+
+FROM ${GEONATURE_BACKEND_DEV_IMAGE} AS dev
+
+RUN --mount=type=cache,target=/root/.cache \
+    --mount=type=bind,source=.,target=/sources,rw \
+    uv pip install --system \
+    -e /sources/gn_module_export \
+    -e /sources/gn_module_dashboard \
+    -e /sources/gn_module_monitoring
+
+
+# keep this target for retro-compat
+FROM prod AS prod-extra

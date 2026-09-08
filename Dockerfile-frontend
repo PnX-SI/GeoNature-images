@@ -1,35 +1,74 @@
-# syntax=docker.io/docker/dockerfile:1.6
+ARG NODE_IMAGE="node:24"
 
 ARG GEONATURE_FRONTEND_IMAGE="ghcr.io/pnx-si/geonature-frontend:latest"
-FROM ${GEONATURE_FRONTEND_IMAGE}-source AS source-extra
+ARG GEONATURE_FRONTEND_NGINX_IMAGE=${GEONATURE_FRONTEND_IMAGE}-nginx
+ARG GEONATURE_FRONTEND_SOURCE_IMAGE=${GEONATURE_FRONTEND_IMAGE}-source
+ARG GEONATURE_FRONTEND_DEV_IMAGE=${GEONATURE_FRONTEND_IMAGE}-dev
+
+FROM ${NODE_IMAGE} AS exports-node-modules
+
+WORKDIR /dist/gn_module_export
+
+COPY ./gn_module_export/frontend/package.json .
+COPY ./gn_module_export/frontend/package-lock.json .
+
+RUN --mount=type=cache,target=/root/.npm \
+  npm ci --omit=peer
+
+FROM ${NODE_IMAGE} AS dashboard-node-modules
+
+WORKDIR /dist/gn_module_dashboard
+
+COPY ./gn_module_dashboard/frontend/package.json .
+COPY ./gn_module_dashboard/frontend/package-lock.json .
+
+RUN --mount=type=cache,target=/root/.npm \
+  npm ci --omit=peer
+
+FROM ${NODE_IMAGE} AS monitorings-node-modules
+
+WORKDIR /dist/gn_module_monitoring
+
+COPY ./gn_module_monitoring/frontend/package.json .
+COPY ./gn_module_monitoring/frontend/package-lock.json .
+
+RUN --mount=type=cache,target=/root/.npm \
+  npm ci --omit=peer
+
+FROM ${GEONATURE_FRONTEND_SOURCE_IMAGE} AS source
 
 WORKDIR /build/external_modules/exports
-COPY ./sources/gn_module_export/frontend/ .
-RUN --mount=type=cache,target=/root/.npm \
-    npm ci --omit=dev --omit=peer
+COPY ./gn_module_export/frontend/ .
+COPY --from=exports-node-modules /dist/gn_module_export/node_modules node_modules
 
 WORKDIR /build/external_modules/dashboard
-COPY ./sources/gn_module_dashboard/frontend/ .
-RUN --mount=type=cache,target=/root/.npm \
-    npm ci --omit=dev --omit=peer
+COPY ./gn_module_dashboard/frontend/ .
+COPY --from=dashboard-node-modules /dist/gn_module_dashboard/node_modules node_modules
 
 WORKDIR /build/external_modules/monitorings
-COPY ./sources/gn_module_monitoring/frontend/ .
-RUN --mount=type=cache,target=/root/.npm \
-    npm ci --omit=dev --omit=peer
+COPY ./gn_module_monitoring/frontend/ .
+COPY --from=monitorings-node-modules /dist/gn_module_monitoring/node_modules node_modules
 
-FROM source-extra as dev-extra
-WORKDIR /build
-RUN npm link @angular/cli
-COPY ./build/dev/frontend_entrypoint.sh /entrypoint.sh
-ENTRYPOINT /entrypoint.sh
-EXPOSE 80
-
-FROM source-extra AS build-extra
+FROM source AS build
 
 WORKDIR /build/
 RUN npm run build
 
-FROM ${GEONATURE_FRONTEND_IMAGE}-nginx AS prod-extra
+FROM ${GEONATURE_FRONTEND_NGINX_IMAGE} AS prod
 
-COPY --from=build-extra /build/dist /usr/share/nginx/html
+COPY --from=build /build/dist /usr/share/nginx/html
+
+FROM ${GEONATURE_FRONTEND_DEV_IMAGE} AS dev
+
+COPY --from=exports-node-modules /dist/gn_module_export /dist/gn_module_export
+COPY --from=dashboard-node-modules /dist/gn_module_dashboard /dist/gn_module_dashboard
+COPY --from=monitorings-node-modules /dist/gn_module_monitoring /dist/gn_module_monitoring
+
+RUN ln -s /dist/gn_module_export external_modules/exports \
+  && ln -s /dist/gn_module_dashboard external_modules/dashboard \
+  && ln -s /dist/gn_module_monitoring external_modules/monitorings
+
+
+# target for retro-compat
+FROM prod AS prod-extra
+FROM dev AS dev-extra
