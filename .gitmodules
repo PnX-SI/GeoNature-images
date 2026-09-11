@@ -1,7 +1,7 @@
 [submodule "GeoNature"]
 	path = GeoNature
-	url = https://github.com/PnX-SI/GeoNature.git
-  branch = develop
+	url = https://github.com/bouttier/GeoNature.git
+  branch = docker
 [submodule "gn_module_export"]
 	path = gn_module_export
 	url = https://github.com/PnX-SI/gn_module_export.git
