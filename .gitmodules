@@ -1,12 +1,16 @@
 [submodule "GeoNature"]
 	path = GeoNature
 	url = https://github.com/PnX-SI/GeoNature.git
+  branch = develop
 [submodule "gn_module_export"]
 	path = gn_module_export
 	url = https://github.com/PnX-SI/gn_module_export.git
+  branch = develop
 [submodule "gn_module_dashboard"]
 	path = gn_module_dashboard
 	url = https://github.com/PnX-SI/gn_module_dashboard.git
+  branch = develop
 [submodule "gn_module_monitoring"]
 	path = gn_module_monitoring
 	url = https://github.com/PnX-SI/gn_module_monitoring.git
+  branch = develop
