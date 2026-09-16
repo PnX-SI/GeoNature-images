@@ -107,7 +107,14 @@ endif
 		-t ${GEONATURE_FRONTEND_EXTRA_DEV_IMAGE} \
 		.
 
+docker-push-backend:
+	docker push ${GEONATURE_BACKEND_EXTRA_IMAGE}
+
+docker-push-frontend:
+	docker push ${GEONATURE_FRONTEND_EXTRA_IMAGE}
+
 docker: docker-backend docker-frontend
 docker-dev: docker-backend-dev docker-frontend-dev
+docker-push: docker-push-backend docker-push-frontend
 
 -include Makefile.local
