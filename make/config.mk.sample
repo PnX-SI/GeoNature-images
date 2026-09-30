@@ -1,1 +1,41 @@
+### Images prefixes ###
+
+# Define the build images prefix
 GEONATURE_IMAGE_PREFIX := my-project-geonature-
+
+# Use these variables set a different prefix between prod and dev
+# For instance, the prod prefix will contains your registry uri whereas dev prefix is local only
+# GEONATURE_PROD_IMAGE_PREFIX := my-project-prod-geonature-
+# GEONATURE_DEV_IMAGE_PREFIX := my-project-dev-geonature-
+
+# Use these variables to set a different prefix between base and extra images
+# GEONATURE_BASE_IMAGE_PREFIX := my-project-base-geonature-
+# GEONATURE_EXTRA_IMAGE_PREFIX := my-project-extra-geonature-
+
+# GEONATURE_BASE_PROD_IMAGE_PREFIX := my-project-base-prod-geonature-
+# GEONATURE_BASE_DEV_IMAGE_PREFIX := my-project-base-dev-geonature-
+# GEONATURE_EXTRA_PROD_IMAGE_PREFIX := my-project-extra-prod-geonature-
+# GEONATURE_EXTRA_DEV_IMAGE_PREFIX := my-project-extra-dev-geonature-
+
+### Images tags ###
+
+# Default tags are computed using git describe. You can manually set it here (not recommanded).
+# BASE_TAG = v1
+# EXTRA_TAG = v1
+
+# Dev tag default to "dev"
+# DEV_TAG = dev
+
+# Uncomment this to use git-describe-based tags for dev too.
+# BASE_DEV_TAG = $(BASE_TAG)
+# EXTRA_DEV_TAG = $(EXTRA_TAG)
+
+### Build of base images ###
+
+# Force to build base images / use remote base images.
+# By default, build only if GeoNature submodule is initialized.
+# GEONATURE_BUILD_BASE := 0
+
+# When not building base images, define here which images should be used
+# GEONATURE_UPSTREAM_IMAGE_PREFIX = ghcr.io/pnx-si/geonature-
+# UPSTREAM_TAG = latest
