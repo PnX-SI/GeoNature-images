@@ -16,12 +16,18 @@ env:
 
 jobs:
   upstream:
+    # This job will looks at GeoNature submodule to identify which commit is referenced, in order to
+    # use GeoNature base images built from this specific commit when building extra images.
+    # We look at submodule url to determinate where the images should be looked up.
+    # If base images are not found for this commit, a build is triggered, and we wait for its completion.
     name: Resolve GeoNature base image
     runs-on: ubuntu-latest
     permissions:
       contents: read
     outputs:
+      # The tag of GeoNature base images, based on referenced commit by GeoNature submodule.
       tag: ${{ steps.resolve.outputs.tag }}
+      # The owner of the GeoNature base images, based on GeoNature submodule url.
       owner: ${{ steps.gn.outputs.owner }}
     steps:
       - name: Checkout
@@ -77,15 +83,16 @@ jobs:
         if: steps.check.outputs.exists == 'false'
         uses: actions/github-script@v7
         env:
-          UPSTREAM_REPO: ${{ steps.gn.outputs.owner }}/${{ steps.gn.outputs.repo }}
+          UPSTREAM_OWNER: ${{ steps.gn.outputs.owner }}
+          UPSTREAM_REPO: ${{ steps.gn.outputs.repo }}
           UPSTREAM_SHA: ${{ steps.resolve.outputs.sha }}
         with:
+          # GEONATURE_REPO_TOKEN should be a fine-grained token with write access to upstream repo content
           github-token: ${{ secrets.GEONATURE_REPO_TOKEN }}
           script: |
-            const [owner, repo] = process.env.UPSTREAM_REPO.split('/');
             await github.rest.repos.createDispatchEvent({
-              owner,
-              repo,
+              owner: process.env.UPSTREAM_OWNER,
+              repo: process.env.UPSTREAM_REPO,
               event_type: 'build-docker',
               client_payload: { ref: process.env.UPSTREAM_SHA },
             });
@@ -96,14 +103,15 @@ jobs:
           GH_TOKEN: ${{ secrets.GEONATURE_REPO_TOKEN }}
           BACKEND_IMAGE: ghcr.io/${{ steps.gn.outputs.owner }}/geonature-backend:${{ steps.resolve.outputs.tag }}
           FRONTEND_IMAGE: ghcr.io/${{ steps.gn.outputs.owner }}/geonature-frontend:${{ steps.resolve.outputs.tag }}
-          UPSTREAM_REPO: ${{ steps.gn.outputs.owner }}/${{ steps.gn.outputs.repo }}
+          UPSTREAM_OWNER: ${{ steps.gn.outputs.owner }}
+          UPSTREAM_REPO: ${{ steps.gn.outputs.repo }}
         run: |
           deadline=$(( $(date +%s) + GEONATURE_BUILD_TIMEOUT * 60 ))
           until docker manifest inspect "$BACKEND_IMAGE" > /dev/null 2>&1 \
             && docker manifest inspect "$FRONTEND_IMAGE" > /dev/null 2>&1; do
             if [ "$(date +%s)" -ge "$deadline" ]; then
               echo "::error::Timed out after ${GEONATURE_BUILD_TIMEOUT}min waiting for $BACKEND_IMAGE and $FRONTEND_IMAGE"
-              gh run list --repo "$UPSTREAM_REPO" --workflow docker.yml --limit 5 || true
+              gh run list --repo "$UPSTREAM_OWNER/$UPSTREAM_REPO" --workflow docker.yml --limit 5 || true
               exit 1
             fi
             sleep 30
