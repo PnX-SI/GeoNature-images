@@ -8,9 +8,98 @@ on:
   release:
     types: [published]
 
+env:
+  GEONATURE_UPSTREAM_IMAGE_PREFIX: ghcr.io/${{ github.repository_owner }}/geonature-
+  # repo publishing the base images, receives the repository_dispatch on push runs
+  GEONATURE_UPSTREAM_REPO: ${{ github.repository_owner }}/GeoNature
+  # used for release runs, push runs use the "sha-<commit>" tag
+  GEONATURE_UPSTREAM_TAG: "2.17.5"
+  # how long to wait for a dispatched GeoNature build, in minutes
+  GEONATURE_BUILD_TIMEOUT: 45
+
 jobs:
+  upstream:
+    name: Resolve GeoNature base image
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      tag: ${{ steps.resolve.outputs.tag }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Resolve GeoNature base image tag
+        id: resolve
+        run: |
+          sha=$(git ls-tree HEAD GeoNature | awk '{print $3}')
+          if [ "${{ github.event_name }}" = "push" ]; then
+            tag="sha-$(git rev-parse --short=7 "$sha")"
+          else
+            tag="$GEONATURE_UPSTREAM_TAG"
+          fi
+          {
+            echo "### GeoNature base image"
+            echo
+            echo "- referenced commit: \`$sha\`"
+            echo "- tag: \`$tag\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+
+      - name: Check GeoNature base images
+        id: check
+        if: github.event_name == 'push'
+        env:
+          BACKEND_IMAGE: ${{ env.GEONATURE_UPSTREAM_IMAGE_PREFIX }}backend:${{ steps.resolve.outputs.tag }}
+          FRONTEND_IMAGE: ${{ env.GEONATURE_UPSTREAM_IMAGE_PREFIX }}frontend:${{ steps.resolve.outputs.tag }}
+        run: |
+          if docker manifest inspect "$BACKEND_IMAGE" > /dev/null 2>&1 \
+            && docker manifest inspect "$FRONTEND_IMAGE" > /dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Trigger GeoNature build
+        if: steps.check.outputs.exists == 'false'
+        uses: actions/github-script@v7
+        env:
+          UPSTREAM_REPO: ${{ env.GEONATURE_UPSTREAM_REPO }}
+          UPSTREAM_SHA: ${{ steps.resolve.outputs.sha }}
+        with:
+          github-token: ${{ secrets.GEONATURE_REPO_TOKEN }}
+          script: |
+            const [owner, repo] = process.env.UPSTREAM_REPO.split('/');
+            await github.rest.repos.createDispatchEvent({
+              owner,
+              repo,
+              event_type: 'build-docker',
+              client_payload: { ref: process.env.UPSTREAM_SHA },
+            });
+
+      - name: Wait for GeoNature base images
+        if: steps.check.outputs.exists == 'false'
+        env:
+          GH_TOKEN: ${{ secrets.GEONATURE_REPO_TOKEN }}
+          BACKEND_IMAGE: ${{ env.GEONATURE_UPSTREAM_IMAGE_PREFIX }}backend:${{ steps.resolve.outputs.tag }}
+          FRONTEND_IMAGE: ${{ env.GEONATURE_UPSTREAM_IMAGE_PREFIX }}frontend:${{ steps.resolve.outputs.tag }}
+          UPSTREAM_REPO: ${{ env.GEONATURE_UPSTREAM_REPO }}
+        run: |
+          deadline=$(( $(date +%s) + GEONATURE_BUILD_TIMEOUT * 60 ))
+          until docker manifest inspect "$BACKEND_IMAGE" > /dev/null 2>&1 \
+            && docker manifest inspect "$FRONTEND_IMAGE" > /dev/null 2>&1; do
+            if [ "$(date +%s)" -ge "$deadline" ]; then
+              echo "::error::Timed out after ${GEONATURE_BUILD_TIMEOUT}min waiting for $BACKEND_IMAGE and $FRONTEND_IMAGE"
+              gh run list --repo "$UPSTREAM_REPO" --workflow docker.yml --limit 5 || true
+              exit 1
+            fi
+            sleep 30
+          done
+
   backend:
     name: Build geonature backend docker image
+    needs: upstream
     if: ${{ github.event_name != 'pull_request' }}
     runs-on: ubuntu-latest
     permissions:
@@ -19,8 +108,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-        with:
-          submodules: True
+
+      - name: Init submodules
+        run: git submodule update --init ':(exclude)GeoNature'
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -48,10 +138,11 @@ jobs:
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          build-args: GEONATURE_BACKEND_IMAGE=ghcr.io/pnx-si/geonature-backend:2.17.4
+          build-args: GEONATURE_BACKEND_IMAGE=${{ env.GEONATURE_UPSTREAM_IMAGE_PREFIX }}backend:${{ needs.upstream.outputs.tag }}
 
   frontend:
     name: Build geonature frontend docker image
+    needs: upstream
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -59,8 +150,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-        with:
-          submodules: True
+
+      - name: Init submodules
+        run: git submodule update --init ':(exclude)GeoNature'
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -88,4 +180,4 @@ jobs:
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          build-args: GEONATURE_FRONTEND_IMAGE=ghcr.io/pnx-si/geonature-frontend:2.17.4
+          build-args: GEONATURE_FRONTEND_IMAGE=${{ env.GEONATURE_UPSTREAM_IMAGE_PREFIX }}frontend:${{ needs.upstream.outputs.tag }}
