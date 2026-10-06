@@ -44,7 +44,8 @@ jobs:
           slug=${url#*github.com}
           slug=${slug#[:/]}
           slug=${slug%.git}
-          echo "owner=${slug%%/*}" >> "$GITHUB_OUTPUT"
+          # Docker image references require a lowercase registry path
+          echo "owner=${slug%%/*}" | tr '[:upper:]' '[:lower:]' >> "$GITHUB_OUTPUT"
           echo "repo=${slug#*/}" >> "$GITHUB_OUTPUT"
 
       - name: Resolve GeoNature base image tag
