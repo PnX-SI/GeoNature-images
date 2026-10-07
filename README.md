@@ -53,3 +53,91 @@ Pour mettre à jour l’ensemble des sous-modules sur leur dernier commit de la 
 git submodule update --remote
 git -C GeoNature submodule update  # si GeoNature est initialisé
 ```
+
+## Installation d'un module externe
+
+Cette section décrit la procédure d'ajout d'un module externe sur une instance GeoNature dockerisée. Cette procédure nécessite de créer une image Docker dédiée.
+
+### Étape 1 : Ajouter le code source du module
+
+Pour commencer, intégrer le code source du module sous forme de sous-module git :
+
+  ```shell
+  git submodule add <repo_module>
+  ```
+
+### Étape 2 : Ajouter le module dans l'image Docker
+
+Une fois que le code source du module est présent, vous devez l'ajouter à la construction des images Docker pour le backend et le frontend de GeoNature (`geonature-backend-extra` et `geonature-frontend-extra`).
+
+1. Ouvrez le fichier `Dockerfile-backend` et ajoutez les lignes suivantes **avant** la ligne `FROM ${GEONATURE_BACKEND_IMAGE} AS base_env` :
+
+   ```docker
+   FROM build AS build-nom-module
+   WORKDIR /build/
+   COPY ./nom_module .
+   RUN python setup.py bdist_wheel
+   ```
+
+1. Toujours dans le même fichier, ajoutez la ligne suivante **après** `COPY --from=build-monitoring /build/dist/*.whl .` :
+
+   ```docker
+   COPY --from=build-nom-module /build/dist/*.whl .
+   ```
+
+1. Pour pouvoir développer sur votre module avec Docker, dans le stage `dev`, faites évoluer la commande d’installation des modules en mode éditable :
+
+  ```docker
+  RUN --mount=type=cache,target=/root/.cache \
+      --mount=type=bind,source=.,target=/sources,rw \
+      uv pip install --system \
+      -e /sources/gn_module_export \
+      -e /sources/gn_module_dashboard \
+      -e /sources/gn_module_monitoring \
+      -e /sources/mon_module
+  ```
+
+1. Si votre module possède un frontend, ouvrez le fichier `Dockerfile-frontend` et ajouter les lignes suivantes **avant** `FROM source AS build` (dans le stage `source` donc):
+
+  ```docker
+  WORKDIR /build/external_modules/module_code
+  COPY ./mon_module/frontend/ .
+  ```
+
+1. Si votre frontend a des dépendances à installer, toujours dans `Dockerfile-frontend` :
+
+Rajouter le bloc suivant **avant** `FROM ${GEONATURE_FRONTEND_SOURCE_IMAGE} AS source` :
+
+  ```docker
+  FROM ${NODE_IMAGE} AS mon_module-node-modules
+
+  WORKDIR /dist/mon_module
+
+  COPY ./mon_module/frontend/package.json .
+  COPY ./mon_module/frontend/package-lock.json .
+
+  RUN --mount=type=cache,target=/root/.npm \
+    npm ci --omit=peer
+
+  ```
+
+Puis rajouter après la ligne `COPY ./mon_module/frontend/ .` que vous avec ajoutez à l’étape précédente dans le stage `source` la ligne suivante :
+
+  ```docker
+  COPY --from=mon_module-node-modules /dist/mon_module/node_modules node_modules
+  ```
+
+1. Pour pouvoir développer sur votre module avec Docker, dans le stage `dev`, rajouter la ligne suivante :
+
+  ```docker
+  COPY --from=monitorings-node-modules /dist/gn_module_monitoring /dist/gn_module_monitoring
+  ```
+
+Puis mettez à jour la liste des liens symboliques dans `external_modules` :
+
+  ```docker
+  RUN ln -s /dist/gn_module_export external_modules/exports \
+    && ln -s /dist/gn_module_dashboard external_modules/dashboard \
+    && ln -s /dist/gn_module_monitoring external_modules/monitorings \
+    && ln -s /dist/mon_module external_modules/module_code
+  ```
