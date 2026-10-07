@@ -1,16 +1,21 @@
 # GeoNature-images
 
-Ce dépôt fournit une image Docker de GeoNature contenant les modules supplémentaires suivants :
+Ce dépôt fournit une image Docker de GeoNature étendu, contenant les modules externes supplémentaires suivants :
 
 - [Monitoring](https://github.com/PnX-SI/gn_module_monitoring)
 - [Dashboard](https://github.com/PnX-SI/gn_module_dashboard)
 - [Export](https://github.com/PnX-SI/gn_module_export)
 
-Les modules suivants, qui font déjà partie de l’image GeoNature de base, restent disponibles :
+Les modules internes suivants, qui font déjà partie de l’image GeoNature de base, restent disponibles :
 
 - Occtax
 - Occhab
 - Validation
+
+Ce dépôt vous fournit aussi des outils facilitant le génération de vos propres images Docker avec les modules externes que vous souhaitez.
+
+Les images de base de GeoNature sans module externe sont générées et disponibles directement dans le [dépôt de GeoNature](https://github.com/orgs/PnX-SI/packages?repo_name=GeoNature).  
+Pour déployer GeoNature avec Docker, le dépôt [GeoNature-docker-services](https://github.com/PnX-SI/GeoNature-Docker-services) fournit un Docker-compose de base clé en main et des exemples pour des environnements plus spécifiques.
 
 ## Builder ses propres images
 
