@@ -5,11 +5,19 @@ on:
     branches:
       - main
       - develop
+    paths-ignore:
+      - 'README.md'
+      - 'docs/**'
+      - 'Makefile'
+      - 'make/**'
+      - '.gitignore'
+      - '.github/**'
   release:
     types: [published]
+  workflow_dispatch:
 
 env:
-  # used for release runs, push runs use the "sha-<commit>" tag
+  # used for release runs; push and workflow_dispatch runs use the "sha-<commit>" tag
   GEONATURE_UPSTREAM_TAG: "2.17.5"
   # how long to wait for a dispatched GeoNature build, in minutes
   GEONATURE_BUILD_TIMEOUT: 45
@@ -52,7 +60,7 @@ jobs:
         id: resolve
         run: |
           sha=$(git ls-tree HEAD GeoNature | awk '{print $3}')
-          if [ "${{ github.event_name }}" = "push" ]; then
+          if [ "${{ github.event_name }}" != "release" ]; then
             tag="sha-$(git rev-parse --short=7 "$sha")"
           else
             tag="$GEONATURE_UPSTREAM_TAG"
@@ -68,7 +76,7 @@ jobs:
 
       - name: Check GeoNature base images
         id: check
-        if: github.event_name == 'push'
+        if: github.event_name != 'release'
         env:
           BACKEND_IMAGE: ghcr.io/${{ steps.gn.outputs.owner }}/geonature-backend:${{ steps.resolve.outputs.tag }}
           FRONTEND_IMAGE: ghcr.io/${{ steps.gn.outputs.owner }}/geonature-frontend:${{ steps.resolve.outputs.tag }}
