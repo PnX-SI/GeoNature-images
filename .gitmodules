@@ -1,7 +1,7 @@
 [submodule "GeoNature"]
 	path = GeoNature
-	url = https://github.com/PnX-SI/GeoNature.git
-	branch = develop
+	url = https://github.com/Pnx-SI/GeoNature.git
+	branch = release-2.18.0
 [submodule "gn_module_export"]
 	path = gn_module_export
 	url = https://github.com/PnX-SI/gn_module_export.git
@@ -13,4 +13,4 @@
 [submodule "gn_module_monitoring"]
 	path = gn_module_monitoring
 	url = https://github.com/PnX-SI/gn_module_monitoring.git
-	branch = develop
+	branch = refact-hotfixes
