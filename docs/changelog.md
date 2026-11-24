@@ -1,5 +1,19 @@
 # CHANGELOG
 
+## 2.17.6
+
+### 🚀 Nouveautés
+
+- Les images `geonature-backend-extra` et `geonature-frontend-extra` sont désormais build depuis le dépôt [GeoNature-images](https://github.com/PnX-SI/GeoNature-images)
+- Ajout des tags `main` et `develop` en plus des tags de release
+
+**🏷️ Versions**
+
+- GeoNature **2.17.6**
+- GeoNature-dashboard 1.6.1
+- GeoNature-export 1.8.2
+- GeoNature-monitoring **1.3.2**
+
 ## 2.17.4
 
 ### 🚀 Nouveautés
@@ -56,7 +70,7 @@ Pour explorer différentes possibilités de configurations, des exemples de `.en
 #### Développement
 
 - Installation automatique des modules ajoutés par l'utilisateur (#72 par @christophe-ramet)
-- Ajout de la possibilité de déployer une base de données GeoNature pré-peuplée (https://github.com/PnX-SI/geonature_db)
+- Ajout de la possibilité de déployer une base de données GeoNature pré-peuplée (<https://github.com/PnX-SI/geonature_db>)
 - Ajout des commandes dans le Makefile: `lint_frontend`, `lint_backend`,`test`
 
 ### 🐛 Corrections
@@ -67,8 +81,6 @@ Pour explorer différentes possibilités de configurations, des exemples de `.en
 - [Développement] Ajout des arguments UID et GID dns la dockerfile du backend (#61 par @lpofredc)
 - [Développement] Correction de la commande `submodule_init` dans le Makefile (par @jpm-cbna)
 - Correction dans la documentation (#66 par @VincentCauchois)
-
-
 
 **⚠️ Notes de version**
 
@@ -363,12 +375,14 @@ cp .env.sample .env
 Les modifications suivantes ont été apportées au fichier `docker-compose.yml` :
 
 - Ajout de la variable d’environnement `USERSHUB_FILL_MD5_PASS` au service UsersHub :
+
   ```
   services:
     usershub:
       environment:
         USERSHUB_FILL_MD5_PASS: ${USERSHUB_FILL_MD5_PASS:-false}
   ```
+
 - Ajout du paramètre `--schedule-filename` à la commande de Celery Beat :
 
   ```
