@@ -1,5 +1,19 @@
 # CHANGELOG
 
+## 2.17.6
+
+### 🚀 Nouveautés
+
+- Les images `geonature-backend-extra` et `geonature-frontend-extra` sont désormais build depuis le dépôt [GeoNature-images](https://github.com/PnX-SI/GeoNature-images)
+- Ajout des tags `main` et `develop` en plus des tags de release
+
+**🏷️ Versions**
+
+- GeoNature **2.17.6**
+- GeoNature-dashboard 1.6.1
+- GeoNature-export 1.8.2
+- GeoNature-monitoring **1.3.2**
+
 ## 2.17.4
 
 ### 🚀 Nouveautés
