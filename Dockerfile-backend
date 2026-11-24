@@ -41,7 +41,7 @@ FROM ${GEONATURE_BACKEND_DEV_IMAGE} AS dev
 
 RUN --mount=type=cache,target=/root/.cache \
     --mount=type=bind,source=.,target=/sources,rw \
-    uv pip install --system \
+    uv pip install \
     -e /sources/gn_module_export \
     -e /sources/gn_module_dashboard \
     -e /sources/gn_module_monitoring
