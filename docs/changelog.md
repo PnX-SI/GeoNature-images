@@ -70,7 +70,7 @@ Pour explorer différentes possibilités de configurations, des exemples de `.en
 #### Développement
 
 - Installation automatique des modules ajoutés par l'utilisateur (#72 par @christophe-ramet)
-- Ajout de la possibilité de déployer une base de données GeoNature pré-peuplée (https://github.com/PnX-SI/geonature_db)
+- Ajout de la possibilité de déployer une base de données GeoNature pré-peuplée (<https://github.com/PnX-SI/geonature_db>)
 - Ajout des commandes dans le Makefile: `lint_frontend`, `lint_backend`,`test`
 
 ### 🐛 Corrections
@@ -81,8 +81,6 @@ Pour explorer différentes possibilités de configurations, des exemples de `.en
 - [Développement] Ajout des arguments UID et GID dns la dockerfile du backend (#61 par @lpofredc)
 - [Développement] Correction de la commande `submodule_init` dans le Makefile (par @jpm-cbna)
 - Correction dans la documentation (#66 par @VincentCauchois)
-
-
 
 **⚠️ Notes de version**
 
@@ -377,12 +375,14 @@ cp .env.sample .env
 Les modifications suivantes ont été apportées au fichier `docker-compose.yml` :
 
 - Ajout de la variable d’environnement `USERSHUB_FILL_MD5_PASS` au service UsersHub :
+
   ```
   services:
     usershub:
       environment:
         USERSHUB_FILL_MD5_PASS: ${USERSHUB_FILL_MD5_PASS:-false}
   ```
+
 - Ajout du paramètre `--schedule-filename` à la commande de Celery Beat :
 
   ```
