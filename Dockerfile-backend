@@ -5,23 +5,23 @@ FROM python:3.11-bookworm AS build
 
 ENV PIP_ROOT_USER_ACTION=ignore
 RUN --mount=type=cache,target=/root/.cache \
-    pip install --upgrade pip setuptools wheel
+    pip install --upgrade pip build
 
 
 FROM build AS build-export
 WORKDIR /build/
 COPY ./gn_module_export .
-RUN python setup.py bdist_wheel
+RUN python -m build --wheel
 
 FROM build AS build-dashboard
 WORKDIR /build/
 COPY ./gn_module_dashboard .
-RUN python setup.py bdist_wheel
+RUN python -m build --wheel
 
 FROM build AS build-monitoring
 WORKDIR /build/
 COPY ./gn_module_monitoring .
-RUN python setup.py bdist_wheel
+RUN python -m build --wheel
 
 FROM ${GEONATURE_BACKEND_IMAGE} AS base_env
 WORKDIR /dist/geonature

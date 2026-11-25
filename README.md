@@ -81,7 +81,7 @@ Une fois que le code source du module est présent, vous devez l'ajouter à la c
    FROM build AS build-nom-module
    WORKDIR /build/
    COPY ./nom_module .
-   RUN python setup.py bdist_wheel
+   RUN python -m build --wheel
    ```
 
 1. Toujours dans le même fichier, ajoutez la ligne suivante **après** `COPY --from=build-monitoring /build/dist/*.whl .` :
