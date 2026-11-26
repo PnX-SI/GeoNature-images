@@ -1,7 +1,7 @@
 ARG GEONATURE_BACKEND_IMAGE="ghcr.io/pnx-si/geonature-backend:latest"
 ARG GEONATURE_BACKEND_DEV_IMAGE=${GEONATURE_BACKEND_IMAGE}-dev
 
-FROM python:3.11-bookworm AS build
+FROM python:3.13-trixie AS build
 
 ENV PIP_ROOT_USER_ACTION=ignore
 RUN --mount=type=cache,target=/root/.cache \
