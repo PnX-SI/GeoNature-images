@@ -5,13 +5,18 @@ on:
     branches:
       - main
       - develop
-    paths-ignore:
+    paths-ignore: &paths-ignore
       - 'README.md'
       - 'docs/**'
       - 'Makefile'
       - 'make/**'
       - '.gitignore'
       - '.github/**'
+  pull_request:
+    branches:
+      - main
+      - develop
+    paths-ignore: *paths-ignore
   release:
     types: [published]
   workflow_dispatch:
