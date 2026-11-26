@@ -134,7 +134,6 @@ jobs:
   backend:
     name: Build geonature backend docker image
     needs: upstream
-    if: ${{ github.event_name != 'pull_request' }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
